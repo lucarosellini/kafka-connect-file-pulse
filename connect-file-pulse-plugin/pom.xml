@@ -281,6 +281,11 @@
                     <artifactId>kafka-connect-filepulse-local-fs</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>io.streamthoughts</groupId>
+                    <artifactId>kafka-connect-filepulse-sftp-fs</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
