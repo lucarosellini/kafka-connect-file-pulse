@@ -19,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -119,6 +121,14 @@ public class NonBlockingBufferReaderTest {
         readAllAndAssert(expected, reader, true);
     }
 
+    @Test
+    public void shouldReadAllLinesGivenLinesWithDifferentLength()throws Exception {
+        final List<TextBlock> expected = generateLines(writer, 1, CR + LF);
+        expected.addAll(generateLines(writer, 1, LF, false, 100));
+        NonBlockingBufferReader reader = createReaderWithCapacity(file, 16);
+        readAllAndAssert(expected, reader, true, 3);
+    }
+
     private static NonBlockingBufferReader createReaderWithCapacity(final File file,
                                                                     final int defaultInitialCapacity) throws FileNotFoundException {
         return new NonBlockingBufferReader(
@@ -130,9 +140,16 @@ public class NonBlockingBufferReaderTest {
     private void readAllAndAssert(final List<TextBlock> expected,
                                   final NonBlockingBufferReader reader,
                                   final boolean strict) throws Exception {
+        readAllAndAssert(expected, reader, strict, 1);
+    }
+
+    private void readAllAndAssert(final List<TextBlock> expected,
+                                  final NonBlockingBufferReader reader,
+                                  final boolean strict,
+                                  final int minRecords) throws Exception {
         List<TextBlock> results = new ArrayList<>();
         while (reader.hasNext()) {
-            List<TextBlock> l = reader.readLines(1, strict);
+            List<TextBlock> l = reader.readLines(minRecords, strict);
             results.addAll(l);
         }
         assertResult(expected, results);
@@ -158,11 +175,19 @@ public class NonBlockingBufferReaderTest {
                                           final int limit,
                                           final String newLine,
                                           final boolean endWithNewLine) throws IOException {
+        return generateLines(writer, limit, newLine, endWithNewLine, 10);
+    }
+
+    private List<TextBlock> generateLines(final BufferedWriter writer,
+                                          final int limit,
+                                          final String newLine,
+                                          final boolean endWithNewLine,
+                                          final int lineLength) throws IOException {
 
         long offset = 0;
         List<TextBlock> generated = new ArrayList<>(limit);
         for (int i = 0; i < limit; i++) {
-            String line = "00000000-" + i;
+            String line = StringUtils.leftPad(String.valueOf(i), lineLength, '0');
             writer.write(line);
             if (i + 1 < limit || endWithNewLine) {
                 writer.write(newLine);
